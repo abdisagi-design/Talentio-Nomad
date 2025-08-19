@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Talent Nomad — Полный интерактивный прототип</title>
+<title>Talent Nomad — Прототип v2 (Seeker/Employer/University)</title>
 <meta name="theme-color" content="#0a2b72" />
 <style>
   :root{
@@ -27,6 +27,7 @@
     font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
     overflow-x:hidden;
   }
+  .hidden{display:none} /* FIX: class used for view switching */
   .shell{max-width:1200px;margin:0 auto;padding:0 16px}
   /* Header */
   header{position:sticky;top:0;z-index:60;background:color-mix(in oklab, var(--bg), transparent 25%);
@@ -117,6 +118,7 @@
           <div class="cta">
             <button class="btn primary" id="enterSeeker">👤 Войти как соискатель</button>
             <button class="btn" id="enterEmployer">💼 Войти как работодатель</button>
+            <button class="btn" id="enterUniversity">🎓 Войти как университет</button>
           </div>
         </div>
       </div>
@@ -258,6 +260,54 @@
         <div class="grid grid-2" id="articlesGrid2"></div>
       </div>
     </section>
+
+    <!-- UNIVERSITY (NEW) -->
+    <section id="university" class="hidden fade-in">
+      <div class="grid grid-2" style="align-items:center">
+        <div class="grid" style="grid-template-columns:auto 1fr; gap:10px; align-items:center">
+          <div class="badge" aria-hidden="true">🎓</div>
+          <div>
+            <div style="font-weight:800" id="uniDashTitle">KBTU — Центр карьеры</div>
+            <div class="muted" style="font-size:12px">Режим университета · загрузка пулов выпускников</div>
+          </div>
+        </div>
+        <div class="grid" style="grid-auto-flow:column; gap:8px; justify-content:end">
+          <button class="btn primary" id="uploadPoolBtn">⬆️ Загрузить пул талантов</button>
+          <button class="btn" id="switchUniBtn">🔁 Сменить университет</button>
+        </div>
+      </div>
+
+      <div class="tabs" id="universityTabs" style="margin-top:8px"></div>
+
+      <div id="university_overview" class="tabpage">
+        <div class="grid grid-3">
+          <div class="card"><div class="content"><div class="muted">Всего талантов</div><div id="uniCount" style="font-weight:900;font-size:22px"></div></div></div>
+          <div class="card"><div class="content"><div class="muted">Средний рейтинг</div><div id="uniAvg" style="font-weight:900;font-size:22px"></div></div></div>
+          <div class="card"><div class="content"><div class="muted">Компании-хабы</div><div id="uniHubs" style="font-weight:900;font-size:22px"></div></div></div>
+        </div>
+        <div class="card" style="margin-top:12px">
+          <div class="title">Динамика часов по месяцам</div>
+          <div class="content"><div id="uniHoursChart" style="height:220px"></div></div>
+        </div>
+      </div>
+
+      <div id="university_pools" class="tabpage hidden">
+        <div class="card"><div class="title">Пул кандидатов</div>
+          <div class="content"><table class="table" id="uniPoolTable"></table></div>
+        </div>
+      </div>
+
+      <div id="university_analytics" class="tabpage hidden">
+        <div class="grid grid-2">
+          <div class="card"><div class="title">Популярные компетенции</div><div class="content"><div id="uniSkillsChart" style="height:220px"></div></div></div>
+          <div class="card"><div class="title">Статусы задач</div><div class="content"><div id="uniStatusChart" style="height:220px"></div></div></div>
+        </div>
+      </div>
+
+      <div id="university_articles" class="tabpage hidden">
+        <div class="grid grid-2" id="uniArticlesGrid"></div>
+      </div>
+    </section>
   </main>
 
   <div class="shell" style="padding:16px 0 40px 0;color:var(--muted);font-size:12px">© 2025 Talent Nomad · Казахстан → ЦА → мир</div>
@@ -360,6 +410,20 @@
     </div>
   </div>
 
+  <div class="modal-backdrop" id="uploadModal">
+    <div class="modal">
+      <div class="hd">Загрузка пула талантов (демо)</div>
+      <div class="bd">
+        <div class="muted" style="margin-bottom:6px">Вставьте список: Имя;Роль;Университет;Рейтинг</div>
+        <textarea id="uploadText" rows="6" style="width:100%;background:transparent;border:1px solid var(--border);color:var(--fg);border-radius:12px;padding:10px"></textarea>
+      </div>
+      <div class="ft">
+        <button class="btn" onclick="closeModals()">Отмена</button>
+        <button class="btn primary" id="uploadConfirm">Добавить</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-backdrop" id="tourModal">
     <div class="modal">
       <div class="hd">Презентация Talent Nomad</div>
@@ -441,9 +505,10 @@ function openModal(id){ $(id).classList.add("show"); }
 function toast(msg){ const t=$("#toast"); t.textContent=msg; t.style.display="block"; setTimeout(()=>t.style.display="none", 1600); }
 function setActiveTab(scope, id){
   document.querySelectorAll(`[data-tabs='${scope}'] .tab`).forEach(n=>n.classList.remove("active"));
-  const b = document.querySelector(`[data-tabs='${scope}'] .tab[data-id='${id}']`); if(b) b.classList.add("active");
+  const sel = document.querySelector(`[data-tabs='${scope}'] .tab[data-id='${id}']`);
+  if(sel) sel.classList.add("active");
   document.querySelectorAll(`#${scope} .tabpage`).forEach(n=>hide(n));
-  show($(`#${scope}_${id}`));
+  const page = $(`#${scope}_${id}`); if(page) show(page);
   window.scrollTo({top:0, behavior:"smooth"});
 }
 function createTabs(scope, tabs){
@@ -465,7 +530,7 @@ function drawBars(el, data, valueKey, labelKey){
   data.forEach((d,i)=>{
     const x = pad + i*(bw+gap);
     const bh = scale(d[valueKey]); const y = h - pad - bh;
-    svg += `<rect x="${x}" y="${y}" width="${bw}" height="${bh})" rx="6" fill="var(--accent)"></rect>`;
+    svg += `<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="6" fill="var(--accent)"></rect>`; /* FIX: stray ')' removed */
     svg += `<text x="${x+bw/2}" y="${h-5}" text-anchor="middle" fill="var(--muted)" font-size="11">${d[labelKey]}</text>`;
   });
   svg += `</svg>`; el.innerHTML = svg;
@@ -484,7 +549,7 @@ function populateLanding(){
         <div style="height:6px;width:100px;background:#202938;border-radius:6px;overflow:hidden">
            <div style="height:6px;width:${score}%;background:var(--accent)"></div>
         </div><span>${score}</span></div></td>`;
-    tr.querySelector("a").addEventListener("click",(e)=>{e.preventDefault(); openUniversity(u)});
+    tr.querySelector("a").addEventListener("click",(e)=>{e.preventDefault(); openUniversityModal(u)});
     tb.appendChild(tr);
   });
   // employer rating small
@@ -541,15 +606,18 @@ function populateSeeker(){
       <button class="btn">Открыть кейс</button></div>`;
     pg.appendChild(c);
   });
-  // universities
+  // universities table (with "Войти как центр карьеры")
   const ut = $("#uniTableFull"); ut.innerHTML="<thead><tr><th>#</th><th>Университет</th><th>Пул талантов</th><th>Скор</th><th>Действие</th></tr></thead><tbody></tbody>";
   const utb = ut.querySelector("tbody");
   UNIVERSITIES.forEach((u,i)=>{
     const pool = SEEKERS.filter(s=>s.uni===u).length;
     const score = 92 - i*2;
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${i+1}</td><td>${u}</td><td>${pool}</td><td>${score}</td><td><button class="btn">Открыть</button></td>`;
-    tr.querySelector("button").addEventListener("click", ()=>openUniversity(u));
+    tr.innerHTML = `<td>${i+1}</td><td>${u}</td><td>${pool}</td><td>${score}</td><td>
+      <button class="btn" data-action="open">Открыть</button>
+      <button class="btn" data-action="login">Войти как центр карьеры</button></td>`;
+    tr.querySelector('[data-action="open"]').addEventListener("click", ()=>openUniversityModal(u));
+    tr.querySelector('[data-action="login"]').addEventListener("click", ()=>switchUniversity(u));
     utb.appendChild(tr);
   });
   // skills map
@@ -616,7 +684,7 @@ function populateEmployer(){
     const avg = (pool.reduce((a,b)=>a+parseFloat(b.rating),0)/Math.max(pool.length,1) || 0).toFixed(1);
     const tr=document.createElement("tr");
     tr.innerHTML = `<td>${u}</td><td>${pool.length}</td><td>${avg}</td><td><button class="btn">Открыть пул</button></td>`;
-    tr.querySelector("button").addEventListener("click",()=>openUniversity(u));
+    tr.querySelector("button").addEventListener("click",()=>openUniversityModal(u));
     ptbody.appendChild(tr);
   });
   // employer ratings
@@ -644,7 +712,44 @@ function populateEmployer(){
   drawBars($("#statusChart3"), kpiTasks, "v", "name");
 }
 
-// ---------- Drill-down ----------
+// ---------- University Dashboard ----------
+let currentUniversity = "KBTU";
+function populateUniversity(){
+  createTabs("university",[
+    {id:"overview",label:"📊 Обзор"},
+    {id:"pools",label:"🎓 Пулы талантов"},
+    {id:"analytics",label:"📈 Аналитика"},
+    {id:"articles",label:"📚 Статьи"},
+  ]);
+  $("#uniDashTitle").textContent = currentUniversity + " — Центр карьеры";
+  // overview cards
+  const pool = SEEKERS.filter(s=>s.uni===currentUniversity);
+  const avg = (pool.reduce((a,b)=>a+parseFloat(b.rating),0)/Math.max(pool.length,1)||0).toFixed(1);
+  $("#uniCount").textContent = pool.length;
+  $("#uniAvg").textContent = avg;
+  $("#uniHubs").textContent = "3";
+  drawBars($("#uniHoursChart"), [{m:"Май",h:12},{m:"Июн",h:18},{m:"Июл",h:26},{m:"Авг",h:31}], "h", "m");
+  // pools table
+  const ut = $("#uniPoolTable"); ut.innerHTML = "<thead><tr><th>Имя</th><th>Роль</th><th>Рейтинг</th><th>Действие</th></tr></thead><tbody></tbody>";
+  const utb = ut.querySelector("tbody");
+  pool.forEach(s=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML = `<td>${s.name}</td><td>${s.role}</td><td>⭐ ${s.rating.toFixed(1)}</td><td><button class="btn" onclick="openCandidate('${s.id}')">Открыть</button></td>`;
+    utb.appendChild(tr);
+  });
+  // analytics
+  drawBars($("#uniSkillsChart"), [{k:"Web",v:18},{k:"Data",v:12},{k:"QA",v:8},{k:"SMM",v:10}], "v", "k");
+  drawBars($("#uniStatusChart"), [{k:"В работе",v:12},{k:"На проверке",v:6},{k:"Готово",v:22}], "v", "k");
+  // articles
+  const ag = $("#uniArticlesGrid"); ag.innerHTML="";
+  ["Как готовить пул выпускников","Шаблоны резюме","Соглашение об эскроу"].forEach(t=>{
+    const c=document.createElement("div"); c.className="card";
+    c.innerHTML = `<div class="content"><div style="font-weight:700">${t}</div><div class="muted" style="margin-top:6px">Материалы для центров карьеры</div></div>`;
+    ag.appendChild(c);
+  });
+}
+
+// ---------- Drill-down (modals) ----------
 function openTaskModal(t){
   $("#taskTitle").textContent = t.title;
   $("#taskSkills").innerHTML = t.skills.map(s=>`<span class="chip">${s}</span>`).join("");
@@ -667,13 +772,12 @@ function openCompany(name){
   const wrap = $("#companyProjects"); wrap.innerHTML=""; wrap.appendChild(list);
   openModal("#companyModal");
 }
-function openUniversity(uni){
+function openUniversityModal(uni){
   $("#uniTitle").textContent = uni;
   const pool = SEEKERS.filter(s=>s.uni===uni);
   const avg = (pool.reduce((a,b)=>a+parseFloat(b.rating),0)/Math.max(pool.length,1) || 0).toFixed(1);
   $("#uniOverview").innerHTML = `<div><strong>Талантов в пуле:</strong> ${pool.length}</div>
                                  <div><strong>Средний рейтинг:</strong> ${avg}</div>`;
-  // Companies hiring (top 3 by rating)
   const cc = $("#uniCompanies"); cc.innerHTML="";
   COMPANIES.slice().sort((a,b)=>b.rating-a.rating).slice(0,3).forEach(c=>{
     const row = document.createElement("div"); row.className="grid"; row.style.gridTemplateColumns="auto 1fr"; row.style.gap="8px";
@@ -681,7 +785,6 @@ function openUniversity(uni){
     row.innerHTML = `<div class="badge">🏢</div><div>${c.name} — <span class="muted">${c.tagline}</span></div>`;
     cc.appendChild(row);
   });
-  // Talent list
   const tl = $("#uniTalent"); tl.innerHTML="";
   pool.forEach(s=>{
     const row = document.createElement("div"); row.className="grid"; row.style.gridTemplateColumns="1fr auto"; row.style.gap="8px";
@@ -690,13 +793,6 @@ function openUniversity(uni){
     tl.appendChild(row);
   });
   openModal("#uniModal");
-}
-function openCandidate(id){
-  const s = SEEKERS.find(x=>x.id===id); if(!s) return;
-  $("#taskTitle").textContent = `${s.name} — ${s.role}`;
-  $("#taskSkills").innerHTML = s.skills.map(s=>`<span class="chip">${s}</span>`).join("");
-  $("#taskMeta").textContent = `Университет: ${s.uni} · Рейтинг: ${s.rating.toFixed(1)} · Кейс(ов): ${s.cases}`;
-  openModal("#taskModal");
 }
 
 // ---------- Branding / Theme ----------
@@ -718,7 +814,7 @@ const TOUR_STEPS = [
   {title:"Соискатель — Университеты", action:()=>{closeModals(); setActiveTab("seeker","universities");}},
   {title:"Работодатель — Пайплайн", action:()=>{switchRole("employer"); setActiveTab("employer","pipeline");}},
   {title:"Работодатель — Кандидаты (10)", action:()=>{setActiveTab("employer","candidates");}},
-  {title:"Рейтинг работодателей", action:()=>{setActiveTab("employer","employers");}},
+  {title:"Университет — Обзор", action:()=>{switchUniversity("KBTU");}},
 ];
 let tourIndex = 0;
 function openTour(){
@@ -741,41 +837,55 @@ function prevSlide(){ tourIndex = Math.max(0, tourIndex-1); setSlide(tourIndex);
 
 // ---------- Role switching ----------
 function switchRole(role){
-  if(role==="seeker"){ hide($("#landing")); hide($("#employer")); show($("#seeker")); }
-  else if(role==="employer"){ hide($("#landing")); hide($("#seeker")); show($("#employer")); }
-  else { show($("#landing")); hide($("#seeker")); hide($("#employer")); }
+  ["landing","seeker","employer","university"].forEach(id=>hide(document.getElementById(id)));
+  if(role==="seeker"){ show($("#seeker")); }
+  else if(role==="employer"){ show($("#employer")); }
+  else if(role==="university"){ show($("#university")); }
+  else { show($("#landing")); }
   window.scrollTo({top:0, behavior:"smooth"});
 }
-
-// ---------- Search/Filters ----------
-function initFilters(){
-  $("#taskSearch").addEventListener("input", filterTasks);
-  $("#taskSkill").addEventListener("change", filterTasks);
+// helper to switch and set current university
+function switchUniversity(u){
+  currentUniversity = u;
+  switchRole("university");
+  populateUniversity();
+  toast("Режим: " + u + " — центр карьеры");
 }
-function filterTasks(){
-  const q = ($("#taskSearch").value || "").toLowerCase();
-  const k = $("#taskSkill").value;
-  const cards = Array.from(document.querySelectorAll("#tasksGrid .card"));
-  cards.forEach(card=>{
-    const text = card.textContent.toLowerCase();
-    const hasSkill = !k || text.includes(k.toLowerCase());
-    const match = (!q || text.includes(q)) && hasSkill;
-    card.style.display = match ? "" : "none";
+
+// ---------- Upload (demo) ----------
+function initUpload(){
+  $("#uploadPoolBtn").addEventListener("click", ()=>openModal("#uploadModal"));
+  $("#uploadConfirm").addEventListener("click", ()=>{
+    const t = $("#uploadText").value.trim();
+    if(!t){ toast("Пустой список"); return; }
+    const rows = t.split("\n").map(l=>l.split(";"));
+    rows.forEach(r=>{
+      if(r.length>=4){
+        SEEKERS.push({id:"N"+Math.random().toString(36).slice(2,7), name:r[0], role:r[1], uni:r[2], rating:parseFloat(r[3])||4.5, cases:1, skills:["Новичок","Готов к стаж."]});
+      }
+    });
+    closeModals();
+    populateUniversity();
+    toast("Пул обновлён (демо)");
+  });
+  $("#switchUniBtn").addEventListener("click", ()=>{
+    const next = prompt("Введите вуз (KBTU, AlmaU, Satbayev, ENU, KazGUU, SDU, KazNU, AITU):", currentUniversity) || currentUniversity;
+    switchUniversity(next);
   });
 }
 
 // ---------- Init ----------
 function init(){
-  // tabs headers setup will occur in populate functions
   populateLanding();
   populateSeeker();
   populateEmployer();
   initBranding();
-  initFilters();
+  initUpload();
 
   document.querySelectorAll(".modal-backdrop").forEach(m=>m.addEventListener("click",e=>{ if(e.target===m) closeModals(); }));
   $("#enterSeeker").addEventListener("click", ()=>switchRole("seeker"));
   $("#enterEmployer").addEventListener("click", ()=>switchRole("employer"));
+  $("#enterUniversity").addEventListener("click", ()=>switchUniversity("KBTU"));
   $("#logoutBtn").addEventListener("click", ()=>{switchRole("guest"); toast("Вы вышли из кабинета");});
   $("#themeBtn").addEventListener("click", ()=>{
     const isBW = document.body.classList.toggle("theme-bw");
