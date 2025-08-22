@@ -1,905 +1,103 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Talent Nomad — Прототип v2 (Seeker/Employer/University)</title>
-<meta name="theme-color" content="#0a2b72" />
-<style>
-  :root{
-    --bg: #07090f; --fg:#e6e6e6; --muted:#a2adbd; --card:#0b0f1a; --border:#1b2432;
-    --accent:#0a2b72; --accent-2:#133a92; --glass: rgba(255,255,255,.04);
-    --radius:16px; --shadow: 0 8px 30px rgba(0,0,0,.35);
-  }
-  .theme-bw{
-    --bg:#ffffff; --fg:#111111; --muted:#60646b; --card:#f5f6f7; --border:#e6e7eb;
-    --accent:#111111; --accent-2:#222222; --glass: rgba(0,0,0,.04);
-    --shadow: 0 10px 28px rgba(17,17,17,.12);
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;height:100%}
-  body{
-    background:
-      radial-gradient(1200px 700px at 10% -10%, rgba(19,58,146,.25), transparent 60%),
-      radial-gradient(1000px 600px at 90% -20%, rgba(10,43,114,.22), transparent 65%),
-      var(--bg);
-    color:var(--fg);
-    font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
-    overflow-x:hidden;
-  }
-  .hidden{display:none} /* FIX: class used for view switching */
-  .shell{max-width:1200px;margin:0 auto;padding:0 16px}
-  /* Header */
-  header{position:sticky;top:0;z-index:60;background:color-mix(in oklab, var(--bg), transparent 25%);
-         border-bottom:1px solid var(--border); backdrop-filter:blur(8px)}
-  .bar{display:flex;align-items:center;gap:14px;padding:12px 0}
-  .brand-dot{width:34px;height:34px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent-2));
-             box-shadow:0 0 0 2px rgba(255,255,255,.04) inset}
-  .brand{font-weight:900;letter-spacing:.3px;font-size:18px}
-  .spacer{flex:1 1 auto}
-  .btn{appearance:none;border:1px solid var(--border);background:transparent;color:var(--fg);
-       padding:10px 14px;border-radius:12px;cursor:pointer;transition:.2s ease;box-shadow:none}
-  .btn:hover{border-color:color-mix(in oklab,var(--accent),var(--border) 55%); transform: translateY(-1px);}
-  .btn:active{transform: translateY(0)}
-  .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:white;border-color:var(--accent)}
-  .btn.ghost{border-color:transparent}
-  .badge{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);
-         border-radius:999px;padding:4px 8px;font-size:12px;color:var(--muted)}
-  /* Layout */
-  .grid{display:grid;gap:16px}
-  .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
-  .grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}
-  @media (max-width:1024px){.grid-3,.grid-4{grid-template-columns:1fr}.grid-2{grid-template-columns:1fr}}
-  /* Cards */
-  .card{background:linear-gradient(180deg, var(--glass), transparent 30%), var(--card);
-        border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden;
-        transform: translateY(0); transition: transform .25s ease, box-shadow .25s ease}
-  .card:hover{ transform: translateY(-3px); box-shadow: 0 14px 30px rgba(0,0,0,.35)}
-  .card .title{font-weight:800;padding:16px 16px 0 16px}
-  .card .content{padding:16px}
-  .muted{color:var(--muted)}
-  .list{margin:0;padding-left:18px}
-  .chips{display:flex;flex-wrap:wrap;gap:8px}
-  .chip{background:color-mix(in oklab, var(--fg), transparent 92%);border:1px solid var(--border);
-        padding:6px 10px;border-radius:999px;font-size:12px}
-  .tag{font-size:12px;padding:3px 7px;border-radius:999px;border:1px solid var(--border);color:var(--muted)}
-  .table{width:100%;border-collapse:collapse}
-  .table th,.table td{text-align:left;border-bottom:1px solid var(--border);padding:10px 8px}
-  .hr{height:1px;background:var(--border);margin:10px 0}
-  /* Hero */
-  .hero{position:relative;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-  .hero .wrap{padding:28px 18px;background:linear-gradient(180deg, rgba(255,255,255,.02), transparent 40%), radial-gradient(900px 600px at 90% -20%, rgba(19,58,146,.24), transparent 60%)}
-  .hero h1{margin:0;font-size:26px;line-height:1.15;letter-spacing:.2px}
-  .hero p{margin:8px 0 0 0;color:var(--muted)}
-  .hero .cta{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
-  /* Tabs */
-  .tabs{display:flex;gap:8px;flex-wrap:wrap}
-  .tab{padding:9px 12px;border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:.2s ease}
-  .tab.active{background:color-mix(in oklab,var(--accent),transparent 86%);border-color:var(--accent)}
-  /* Modal */
-  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:70}
-  .modal{width:min(780px,92vw);background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden;box-shadow:var(--shadow); animation: pop .2s ease}
-  .modal .hd{padding:16px;border-bottom:1px solid var(--border);font-weight:800}
-  .modal .bd{padding:16px}
-  .modal .ft{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
-  .show{display:flex!important}
-  /* Toast */
-  .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--border);
-         border-radius:12px;padding:10px 14px;display:none;z-index:80}
-  /* Animations */
-  @keyframes pop{ from{ transform:scale(.96); opacity:.0 } to{ transform:scale(1); opacity:1 } }
-  .fade-in{ animation: fade .4s ease both }
-  @keyframes fade{ from{ opacity:0; transform: translateY(6px) } to{ opacity:1; transform:none } }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Talent Nomad — Прототип v2 (Seeker/Employer/University)</title>
+  <meta name="theme-color" content="#0a2b72" />
+  <!-- ДОБАВЛЕНЫ: Google Fonts и стильный динамичный CSS -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat:700,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="stylish-dynamic.css">
+  <style>
+    :root{
+      --bg: #07090f; --fg:#e6e6e6; --muted:#a2adbd; --card:#0b0f1a; --border:#1b2432;
+      --accent:#0a2b72; --accent-2:#133a92; --glass: rgba(255,255,255,.04);
+      --radius:16px; --shadow: 0 8px 30px rgba(0,0,0,.35);
+    }
+    .theme-bw{
+      --bg:#ffffff; --fg:#111111; --muted:#60646b; --card:#f5f6f7; --border:#e6e7eb;
+      --accent:#111111; --accent-2:#222222; --glass: rgba(0,0,0,.04);
+      --shadow: 0 10px 28px rgba(17,17,17,.12);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;height:100%}
+    body{
+      background:
+        radial-gradient(1200px 700px at 10% -10%, rgba(19,58,146,.25), transparent 60%),
+        radial-gradient(1000px 600px at 90% -20%, rgba(10,43,114,.22), transparent 65%),
+        var(--bg);
+      color:var(--fg);
+      font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
+      overflow-x:hidden;
+    }
+    .hidden{display:none} /* FIX: class used for view switching */
+    .shell{max-width:1200px;margin:0 auto;padding:0 16px}
+    /* Header */
+    header{position:sticky;top:0;z-index:60;background:color-mix(in oklab, var(--bg), transparent 25%);
+           border-bottom:1px solid var(--border); backdrop-filter:blur(8px)}
+    .bar{display:flex;align-items:center;gap:14px;padding:12px 0}
+    .brand-dot{width:34px;height:34px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+               box-shadow:0 0 0 2px rgba(255,255,255,.04) inset}
+    .brand{font-weight:900;letter-spacing:.3px;font-size:18px}
+    .spacer{flex:1 1 auto}
+    .btn{appearance:none;border:1px solid var(--border);background:transparent;color:var(--fg);
+         padding:10px 14px;border-radius:12px;cursor:pointer;transition:.2s ease;box-shadow:none}
+    .btn:hover{border-color:color-mix(in oklab,var(--accent),var(--border) 55%); transform: translateY(-1px);}
+    .btn:active{transform: translateY(0)}
+    .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:white;border-color:var(--accent)}
+    .btn.ghost{border-color:transparent}
+    .badge{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);
+           border-radius:999px;padding:4px 8px;font-size:12px;color:var(--muted)}
+    /* Layout */
+    .grid{display:grid;gap:16px}
+    .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+    @media (max-width:1024px){.grid-3,.grid-4{grid-template-columns:1fr}.grid-2{grid-template-columns:1fr}}
+    /* Cards */
+    .card{background:linear-gradient(180deg, var(--glass), transparent 30%), var(--card);
+          border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden;
+          transform: translateY(0); transition: transform .25s ease, box-shadow .25s ease}
+    .card:hover{ transform: translateY(-3px); box-shadow: 0 14px 30px rgba(0,0,0,.35)}
+    .card .title{font-weight:800;padding:16px 16px 0 16px}
+    .card .content{padding:16px}
+    .muted{color:var(--muted)}
+    .list{margin:0;padding-left:18px}
+    .chips{display:flex;flex-wrap:wrap;gap:8px}
+    .chip{background:color-mix(in oklab, var(--fg), transparent 92%);border:1px solid var(--border);
+          padding:6px 10px;border-radius:999px;font-size:12px}
+    .tag{font-size:12px;padding:3px 7px;border-radius:999px;border:1px solid var(--border);color:var(--muted)}
+    .table{width:100%;border-collapse:collapse}
+    .table th,.table td{text-align:left;border-bottom:1px solid var(--border);padding:10px 8px}
+    .hr{height:1px;background:var(--border);margin:10px 0}
+    /* Hero */
+    .hero{position:relative;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+    .hero .wrap{padding:28px 18px;background:linear-gradient(180deg, rgba(255,255,255,.02), transparent 40%), radial-gradient(900px 600px at 90% -20%, rgba(19,58,146,.24), transparent 60%)}
+    .hero h1{margin:0;font-size:26px;line-height:1.15;letter-spacing:.2px}
+    .hero p{margin:8px 0 0 0;color:var(--muted)}
+    .hero .cta{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+    /* Tabs */
+    .tabs{display:flex;gap:8px;flex-wrap:wrap}
+    .tab{padding:9px 12px;border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:.2s ease}
+    .tab.active{background:color-mix(in oklab,var(--accent),transparent 86%);border-color:var(--accent)}
+    /* Modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:70}
+    .modal{width:min(780px,92vw);background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden;box-shadow:var(--shadow); animation: pop .2s ease}
+    .modal .hd{padding:16px;border-bottom:1px solid var(--border);font-weight:800}
+    .modal .bd{padding:16px}
+    .modal .ft{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+    .show{display:flex!important}
+    /* Toast */
+    .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--border);
+           border-radius:12px;padding:10px 14px;display:none;z-index:80}
+    /* Animations */
+    @keyframes pop{ from{ transform:scale(.96); opacity:.0 } to{ transform:scale(1); opacity:1 } }
+    .fade-in{ animation: fade .4s ease both }
+    @keyframes fade{ from{ opacity:0; transform: translateY(6px) } to{ opacity:1; transform:none } }
+  </style>
 </head>
 <body>
-  <header>
-    <div class="shell bar">
-      <div class="brand-dot" id="brandDot" aria-hidden="true"></div>
-      <div class="brand">Talent Nomad <span class="badge">MVP</span></div>
-      <div class="spacer"></div>
-      <button class="btn ghost" id="tourBtn">🎬 Презентация</button>
-      <button class="btn ghost" id="themeBtn">🎨 Тема</button>
-      <button class="btn ghost" id="brandingBtn">⚙️ Бренд</button>
-      <span class="badge">🌐 RU/KZ</span>
-      <div style="width:8px"></div>
-      <button class="btn" id="logoutBtn">↩︎ Выйти</button>
-    </div>
-  </header>
-
-  <main class="shell" style="padding:16px 16px 0 16px">
-    <!-- LANDING -->
-    <section id="landing" class="fade-in">
-      <div class="hero">
-        <div class="wrap">
-          <h1>Платформа для входа молодых специалистов на рынок — задачи, часы, подтверждённое портфолио</h1>
-          <p>Казахстан → Центральная Азия → мир. Эскроу, этапная приёмка, рейтинги университетов и работодателей, пулы талантов.</p>
-          <div class="cta">
-            <button class="btn primary" id="enterSeeker">👤 Войти как соискатель</button>
-            <button class="btn" id="enterEmployer">💼 Войти как работодатель</button>
-            <button class="btn" id="enterUniversity">🎓 Войти как университет</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid grid-3" style="margin-top:16px">
-        <div class="card">
-          <div class="title">🎓 Топ университетов</div>
-          <div class="content"><table class="table" id="uniTableSmall"></table></div>
-        </div>
-        <div class="card">
-          <div class="title">📈 Метрики вовлечения</div>
-          <div class="content">
-            <div class="grid grid-2">
-              <div>
-                <div class="muted" style="margin-bottom:8px">Часы, закрытые соискателями</div>
-                <div id="hoursChart" style="height:180px"></div>
-              </div>
-              <div>
-                <div class="muted" style="margin-bottom:8px">Статусы задач</div>
-                <div id="statusChart" style="height:180px"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="title">🏢 Рейтинг работодателей</div>
-          <div class="content"><table class="table" id="employerRatingSmall"></table></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- SEEKER -->
-    <section id="seeker" class="hidden fade-in">
-      <div class="grid grid-2" style="align-items:center">
-        <div class="grid" style="grid-template-columns:auto 1fr; gap:10px; align-items:center">
-          <div class="badge" aria-hidden="true">🪪</div>
-          <div>
-            <div style="font-weight:800">Алиша А. — Frontend (Junior)</div>
-            <div class="muted" style="font-size:12px">Алматы · RU/KZ · готовность 20 ч/нед</div>
-          </div>
-        </div>
-        <div class="grid" style="grid-template-columns:repeat(3,1fr);gap:12px">
-          <div class="card"><div class="content"><div class="muted">Завершено</div><div style="font-weight:900;font-size:20px">12</div></div></div>
-          <div class="card"><div class="content"><div class="muted">Рейтинг</div><div style="font-weight:900;font-size:20px">4.8 ⭐</div></div></div>
-          <div class="card"><div class="content"><div class="muted">Часы (мес.)</div><div style="font-weight:900;font-size:20px">46</div></div></div>
-        </div>
-      </div>
-
-      <div class="tabs" id="seekerTabs" style="margin-top:8px"></div>
-
-      <div id="seeker_feed" class="tabpage">
-        <div class="search-row" style="margin:10px 0 12px 0">
-          <input type="text" placeholder="Поиск задач…" id="taskSearch"/>
-          <select id="taskSkill">
-            <option value="">Навык</option><option>Frontend</option><option>Data</option><option>QA</option><option>SMM</option><option>UI/UX</option>
-          </select>
-          <button class="btn" id="taskFilterBtn">🔎 Фильтры</button>
-        </div>
-        <div id="tasksGrid" class="grid grid-2"></div>
-      </div>
-
-      <div id="seeker_contracts" class="tabpage hidden">
-        <div class="card"><div class="title">Этапы и эскроу</div>
-          <div class="content">
-            <table class="table"><thead><tr><th>Задача</th><th>Этап</th><th>Статус</th><th>Оплата</th></tr></thead>
-            <tbody><tr><td>Верстка лендинга</td><td>UI (50%)</td><td><span class="tag">На проверке</span></td><td><span class="tag">в эскроу</span></td></tr>
-                   <tr><td>SMM контент</td><td>Календарь</td><td><span class="tag">В работе</span></td><td>—</td></tr></tbody></table>
-          </div></div>
-      </div>
-
-      <div id="seeker_portfolio" class="tabpage hidden">
-        <div class="grid grid-3" id="portfolioGrid"></div>
-      </div>
-
-      <div id="seeker_universities" class="tabpage hidden">
-        <div class="card"><div class="title">Университеты — пулы талантов</div>
-          <div class="content"><table class="table" id="uniTableFull"></table></div></div>
-      </div>
-
-      <div id="seeker_skills" class="tabpage hidden">
-        <div class="grid grid-2">
-          <div class="card"><div class="title">Карта компетенций 2025–2028</div>
-            <div class="content" id="competencyMap"></div></div>
-          <div class="card"><div class="title">Мои статусы задач</div>
-            <div class="content"><div id="statusChart2" style="height:220px"></div></div></div>
-        </div>
-      </div>
-
-      <div id="seeker_articles" class="tabpage hidden">
-        <div class="grid grid-2" id="articlesGrid"></div>
-      </div>
-    </section>
-
-    <!-- EMPLOYER -->
-    <section id="employer" class="hidden fade-in">
-      <div class="grid grid-2" style="align-items:center">
-        <div class="grid" style="grid-template-columns:auto 1fr; gap:10px; align-items:center">
-          <div class="badge" aria-hidden="true">🏷️</div>
-          <div>
-            <div style="font-weight:800" id="companyName">Jana Post — Работодатель</div>
-            <div class="muted" style="font-size:12px">Орг-аккаунт · бюджет пилота 2.5 млн ₸</div>
-          </div>
-        </div>
-        <div class="grid" style="grid-auto-flow:column; gap:8px; justify-content:end">
-          <button class="btn primary" id="newTaskBtn">➕ Новая задача</button>
-          <button class="btn" id="openBranding">🖼️ Бренд-страница</button>
-        </div>
-      </div>
-
-      <div class="tabs" id="employerTabs" style="margin-top:8px"></div>
-
-      <div id="employer_pipeline" class="tabpage">
-        <div class="card"><div class="title">Активные задачи</div>
-          <div class="content"><table class="table" id="pipelineTable"></table></div></div>
-      </div>
-
-      <div id="employer_candidates" class="tabpage hidden">
-        <div id="candidatesGrid" class="grid grid-3"></div>
-      </div>
-
-      <div id="employer_pools" class="tabpage hidden">
-        <div class="card"><div class="title">Пулы по университетам</div>
-          <div class="content"><table class="table" id="poolsTable"></table></div></div>
-      </div>
-
-      <div id="employer_employers" class="tabpage hidden">
-        <div class="card"><div class="title">Рейтинг работодателей</div>
-          <div class="content"><table class="table" id="employerRating"></table></div></div>
-      </div>
-
-      <div id="employer_reports" class="tabpage hidden">
-        <div class="grid grid-2">
-          <div class="card"><div class="title">Часы по проектам</div><div class="content"><div id="hoursChart2" style="height:220px"></div></div></div>
-          <div class="card"><div class="title">Статусы задач</div><div class="content"><div id="statusChart3" style="height:220px"></div></div></div>
-        </div>
-      </div>
-
-      <div id="employer_articles" class="tabpage hidden">
-        <div class="grid grid-2" id="articlesGrid2"></div>
-      </div>
-    </section>
-
-    <!-- UNIVERSITY (NEW) -->
-    <section id="university" class="hidden fade-in">
-      <div class="grid grid-2" style="align-items:center">
-        <div class="grid" style="grid-template-columns:auto 1fr; gap:10px; align-items:center">
-          <div class="badge" aria-hidden="true">🎓</div>
-          <div>
-            <div style="font-weight:800" id="uniDashTitle">KBTU — Центр карьеры</div>
-            <div class="muted" style="font-size:12px">Режим университета · загрузка пулов выпускников</div>
-          </div>
-        </div>
-        <div class="grid" style="grid-auto-flow:column; gap:8px; justify-content:end">
-          <button class="btn primary" id="uploadPoolBtn">⬆️ Загрузить пул талантов</button>
-          <button class="btn" id="switchUniBtn">🔁 Сменить университет</button>
-        </div>
-      </div>
-
-      <div class="tabs" id="universityTabs" style="margin-top:8px"></div>
-
-      <div id="university_overview" class="tabpage">
-        <div class="grid grid-3">
-          <div class="card"><div class="content"><div class="muted">Всего талантов</div><div id="uniCount" style="font-weight:900;font-size:22px"></div></div></div>
-          <div class="card"><div class="content"><div class="muted">Средний рейтинг</div><div id="uniAvg" style="font-weight:900;font-size:22px"></div></div></div>
-          <div class="card"><div class="content"><div class="muted">Компании-хабы</div><div id="uniHubs" style="font-weight:900;font-size:22px"></div></div></div>
-        </div>
-        <div class="card" style="margin-top:12px">
-          <div class="title">Динамика часов по месяцам</div>
-          <div class="content"><div id="uniHoursChart" style="height:220px"></div></div>
-        </div>
-      </div>
-
-      <div id="university_pools" class="tabpage hidden">
-        <div class="card"><div class="title">Пул кандидатов</div>
-          <div class="content"><table class="table" id="uniPoolTable"></table></div>
-        </div>
-      </div>
-
-      <div id="university_analytics" class="tabpage hidden">
-        <div class="grid grid-2">
-          <div class="card"><div class="title">Популярные компетенции</div><div class="content"><div id="uniSkillsChart" style="height:220px"></div></div></div>
-          <div class="card"><div class="title">Статусы задач</div><div class="content"><div id="uniStatusChart" style="height:220px"></div></div></div>
-        </div>
-      </div>
-
-      <div id="university_articles" class="tabpage hidden">
-        <div class="grid grid-2" id="uniArticlesGrid"></div>
-      </div>
-    </section>
-  </main>
-
-  <div class="shell" style="padding:16px 0 40px 0;color:var(--muted);font-size:12px">© 2025 Talent Nomad · Казахстан → ЦА → мир</div>
-
-  <!-- MODALS -->
-  <div class="modal-backdrop" id="taskModal">
-    <div class="modal">
-      <div class="hd" id="taskTitle">Задача</div>
-      <div class="bd">
-        <div class="chips" id="taskSkills"></div>
-        <div id="taskMeta" style="margin-top:8px"></div>
-        <div class="hr"></div>
-        <div class="muted">Короткое ТЗ: этапная приёмка, эскроу, коммуникация в приложении. Приоритет — ясность и сроки.</div>
-      </div>
-      <div class="ft">
-        <button class="btn">Сохранить</button>
-        <button class="btn">Задать вопрос</button>
-        <button class="btn primary" id="respondBtn">Откликнуться</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-backdrop" id="wizardModal">
-    <div class="modal">
-      <div class="hd">Новая микро‑задача</div>
-      <div class="bd">
-        <div class="grid grid-2">
-          <input type="text" placeholder="Название (напр. SMM: контент‑календарь)" />
-          <select><option>Тип оплаты</option><option>Почасовая</option><option>Фиксированная</option></select>
-          <input type="text" placeholder="Ставка, ₸/час" />
-          <input type="text" placeholder="Оценка, ч" />
-        </div>
-        <input type="text" placeholder="Ключевые навыки (через запятую)" style="margin-top:8px" />
-      </div>
-      <div class="ft">
-        <button class="btn" id="closeWizard">Отмена</button>
-        <button class="btn primary" id="publishWizard">Опубликовать</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-backdrop" id="brandingModal">
-    <div class="modal">
-      <div class="hd">Брендинг и тема</div>
-      <div class="bd">
-        <div class="muted" style="margin-bottom:6px">Цвет акцента</div>
-        <input type="color" id="accentPicker" value="#0a2b72" />
-        <div style="height:12px"></div>
-        <div class="muted">Режим темы</div>
-        <div class="chips">
-          <button class="chip" data-theme="night">Ночной</button>
-          <button class="chip" data-theme="bw">Чёрно‑белый</button>
-        </div>
-      </div>
-      <div class="ft"><button class="btn" id="closeBranding">Закрыть</button></div>
-    </div>
-  </div>
-
-  <div class="modal-backdrop" id="companyModal">
-    <div class="modal">
-      <div class="hd" id="companyTitle">Компания</div>
-      <div class="bd">
-        <div class="grid grid-2">
-          <div>
-            <div class="muted">Проекты</div>
-            <div id="companyProjects"></div>
-          </div>
-          <div>
-            <div class="muted">Оценка работодателя</div>
-            <div id="companyRating" style="font-size:20px;font-weight:900">—</div>
-            <div class="hr"></div>
-            <div class="muted">Последние отзывы (демо)</div>
-            <ul class="list"><li>Чёткое ТЗ и быстрая приёмка</li><li>Корректная коммуникация</li></ul>
-          </div>
-        </div>
-      </div>
-      <div class="ft"><button class="btn" onclick="closeModals()">Закрыть</button></div>
-    </div>
-  </div>
-
-  <div class="modal-backdrop" id="uniModal">
-    <div class="modal">
-      <div class="hd" id="uniTitle">Университет</div>
-      <div class="bd">
-        <div class="grid grid-2">
-          <div>
-            <div class="muted">Обзор</div>
-            <div id="uniOverview"></div>
-            <div class="hr"></div>
-            <div class="muted">Компании‑хабы</div>
-            <div id="uniCompanies"></div>
-          </div>
-          <div>
-            <div class="muted">Пул талантов</div>
-            <div id="uniTalent" style="max-height:260px;overflow:auto"></div>
-          </div>
-        </div>
-      </div>
-      <div class="ft"><button class="btn" onclick="closeModals()">Закрыть</button></div>
-    </div>
-  </div>
-
-  <div class="modal-backdrop" id="uploadModal">
-    <div class="modal">
-      <div class="hd">Загрузка пула талантов (демо)</div>
-      <div class="bd">
-        <div class="muted" style="margin-bottom:6px">Вставьте список: Имя;Роль;Университет;Рейтинг</div>
-        <textarea id="uploadText" rows="6" style="width:100%;background:transparent;border:1px solid var(--border);color:var(--fg);border-radius:12px;padding:10px"></textarea>
-      </div>
-      <div class="ft">
-        <button class="btn" onclick="closeModals()">Отмена</button>
-        <button class="btn primary" id="uploadConfirm">Добавить</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-backdrop" id="tourModal">
-    <div class="modal">
-      <div class="hd">Презентация Talent Nomad</div>
-      <div class="bd">
-        <div id="slides"></div>
-        <div class="dots" id="dots"></div>
-      </div>
-      <div class="ft">
-        <button class="btn" id="prevSlide">Назад</button>
-        <button class="btn primary" id="nextSlide">Далее</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="toast" id="toast">Готово</div>
-
-<script>
-// ---------- Data ----------
-const UNIVERSITIES = ["KBTU","AlmaU","Satbayev","ENU","KazGUU","SDU","KazNU","AITU"];
-const COMPANIES = [
-  {name:"Jana Post", rating:4.7, tagline:"Логистика и e‑commerce", projects:[
-    {title:"Дашборд продаж", skills:["BI/Looker","SQL","Аналитика"], rate:2900, hours:14, deadline:"10 дн."},
-    {title:"QA чек‑листы", skills:["Авто‑тесты","Документация","Postman"], rate:2200, hours:10, deadline:"7 дн."},
-    {title:"SMM контент‑план", skills:["UGC","Ads Manager","Copy"], rate:2100, hours:8, deadline:"6 дн."},
-  ]},
-  {name:"MarketX", rating:4.8, tagline:"Маркетплейс", projects:[
-    {title:"Лендинг продукта", skills:["React/Next","UI/UX","Performance"], rate:3000, hours:16, deadline:"12 дн."},
-    {title:"Аналитика роста", skills:["A/B","Монетизация","SQL"], rate:2800, hours:12, deadline:"9 дн."},
-  ]},
-  {name:"Q‑Labs", rating:4.6, tagline:"Продуктовая студия", projects:[
-    {title:"Flutter‑прототип", skills:["Flutter","API/REST","Performance"], rate:3100, hours:18, deadline:"14 дн."},
-    {title:"CI/CD настройка", skills:["Docker","CI/CD","Cloud"], rate:3200, hours:14, deadline:"11 дн."},
-  ]},
-  {name:"CaspianPay", rating:4.9, tagline:"Финтех", projects:[
-    {title:"Onboarding UI", skills:["UI/UX","React","TypeScript"], rate:3300, hours:16, deadline:"10 дн."},
-    {title:"Security audit", skills:["Security","Документация"], rate:3400, hours:12, deadline:"9 дн."},
-  ]},
-  {name:"EduBridge", rating:4.5, tagline:"EdTech", projects:[
-    {title:"Видеоуроки (SMM)", skills:["Short‑video","UGC","Copy"], rate:2000, hours:8, deadline:"6 дн."},
-    {title:"Дашборд курса", skills:["BI/Looker","SQL","Аналитика"], rate:2600, hours:12, deadline:"9 дн."},
-  ]},
-];
-const SEEKERS = [
-  {id:"U1", name:"Алия А.", role:"Frontend", uni:"KBTU", rating:4.8, cases:6, skills:["React/Next","TypeScript","API/REST"]},
-  {id:"U2", name:"Арман К.", role:"QA", uni:"ENU", rating:4.6, cases:4, skills:["Авто‑тесты","Postman","Документация"]},
-  {id:"U3", name:"Маржан С.", role:"SMM", uni:"AlmaU", rating:4.7, cases:7, skills:["UGC","Short‑video","Ads Manager"]},
-  {id:"U4", name:"Нурлан Ж.", role:"Data Analyst", uni:"KazNU", rating:4.5, cases:5, skills:["Python/SQL","BI/Looker","Аналитика"]},
-  {id:"U5", name:"Диана Т.", role:"UI/UX", uni:"SDU", rating:4.9, cases:8, skills:["Figma","Прототипирование","A/B"]},
-  {id:"U6", name:"Ержан Р.", role:"Mobile (Flutter)", uni:"AITU", rating:4.4, cases:3, skills:["Flutter","API/REST","Performance"]},
-  {id:"U7", name:"Аружан М.", role:"Product Analyst", uni:"KBTU", rating:4.6, cases:5, skills:["Аналитика","SQL","Монетизация"]},
-  {id:"U8", name:"Руслан Д.", role:"Backend", uni:"Satbayev", rating:4.5, cases:4, skills:["Python/SQL","Security","Docker"]},
-  {id:"U9", name:"Айгерим Н.", role:"Content Creator", uni:"AlmaU", rating:4.7, cases:6, skills:["Copy/Story","UGC","EN/KZ/RU"]},
-  {id:"U10", name:"Сабина Ж.", role:"DevOps (Jr)", uni:"ENU", rating:4.3, cases:3, skills:["CI/CD","Docker","Cloud"]},
-];
-const ARTICLES = [
-  {title:"Как пройти первое интервью", tag:"Соискателю"},
-  {title:"Чек‑лист портфолио", tag:"Соискателю"},
-  {title:"Эскроу: как это работает", tag:"Финансы"},
-  {title:"Смарт‑задачи для джуна", tag:"Работодателю"},
-];
-const COMPETENCIES = [
-  {cat:"AI & Data", skills:["AI‑литераси", "Python/SQL", "Базовый ML", "BI/Looker", "Prompt‑инжиниринг"]},
-  {cat:"Web & Mobile", skills:["React/Next", "Flutter", "TypeScript", "API/REST", "Performance"]},
-  {cat:"Product & Growth", skills:["JTBD/UX‑исслед.", "Аналитика", "A/B", "Монетизация", "Go‑to‑Market"]},
-  {cat:"QA & Sec", skills:["Авто‑тесты", "Postman", "CI/CD основы", "Security basics", "Документация"]},
-  {cat:"Content & SMM", skills:["UGC‑продакшн", "Copy/Story", "Short‑video", "Ads Manager", "Коммьюнити"]},
-  {cat:"Ops & Cloud", skills:["Git/GitHub", "Docker basics", "Cloud basics", "Linux basics", "Мониторинг"]},
-  {cat:"Meta‑skills", skills:["Коммуникация", "EN/KZ/RU", "Time‑Mgmt", "Критическое мышл.", "Командная работа"]},
-];
-
-// ---------- Helpers ----------
-const $ = s => document.querySelector(s);
-function show(el){el.classList.remove("hidden")}
-function hide(el){el.classList.add("hidden")}
-function setTheme(mode){ document.body.classList.toggle("theme-bw", mode === "bw"); }
-function applyAccent(color){ document.documentElement.style.setProperty("--accent", color); $("#brandDot").style.background = color; }
-function closeModals(){ document.querySelectorAll(".modal-backdrop").forEach(m=>m.classList.remove("show")); }
-function openModal(id){ $(id).classList.add("show"); }
-function toast(msg){ const t=$("#toast"); t.textContent=msg; t.style.display="block"; setTimeout(()=>t.style.display="none", 1600); }
-function setActiveTab(scope, id){
-  document.querySelectorAll(`[data-tabs='${scope}'] .tab`).forEach(n=>n.classList.remove("active"));
-  const sel = document.querySelector(`[data-tabs='${scope}'] .tab[data-id='${id}']`);
-  if(sel) sel.classList.add("active");
-  document.querySelectorAll(`#${scope} .tabpage`).forEach(n=>hide(n));
-  const page = $(`#${scope}_${id}`); if(page) show(page);
-  window.scrollTo({top:0, behavior:"smooth"});
-}
-function createTabs(scope, tabs){
-  const c = document.getElementById(scope+"Tabs"); c.setAttribute("data-tabs", scope); c.innerHTML="";
-  tabs.forEach(t=>{
-    const b=document.createElement("button"); b.className="tab"; b.dataset.id=t.id; b.textContent=t.label;
-    b.addEventListener("click", ()=>setActiveTab(scope, t.id)); c.appendChild(b);
-  });
-  setActiveTab(scope, tabs[0].id);
-}
-function drawBars(el, data, valueKey, labelKey){
-  if(!el) return;
-  const w = el.clientWidth || 320, h = el.clientHeight || 180;
-  const pad = 20, gap = 16, bw = Math.max(24, (w - pad*2 - gap*(data.length-1)) / data.length);
-  const vmax = Math.max(...data.map(d=>d[valueKey])) || 1;
-  const scale = v => Math.round((v / vmax) * (h - pad*2));
-  let svg = `<svg width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">`;
-  svg += `<rect width="${w}" height="${h}" fill="transparent"/>`;
-  data.forEach((d,i)=>{
-    const x = pad + i*(bw+gap);
-    const bh = scale(d[valueKey]); const y = h - pad - bh;
-    svg += `<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="6" fill="var(--accent)"></rect>`; /* FIX: stray ')' removed */
-    svg += `<text x="${x+bw/2}" y="${h-5}" text-anchor="middle" fill="var(--muted)" font-size="11">${d[labelKey]}</text>`;
-  });
-  svg += `</svg>`; el.innerHTML = svg;
-}
-
-// ---------- Landing ----------
-function populateLanding(){
-  // universities small
-  const t = $("#uniTableSmall"); t.innerHTML = "<thead><tr><th>Вуз</th><th>Скор</th></tr></thead><tbody></tbody>";
-  const tb = t.querySelector("tbody");
-  UNIVERSITIES.slice(0,6).forEach((u,i)=>{
-    const score = 90 - i*3;
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td><a href="#" data-uni="${u}" class="link-btn">${u}</a></td>
-      <td><div style="display:flex;align-items:center;gap:8px">
-        <div style="height:6px;width:100px;background:#202938;border-radius:6px;overflow:hidden">
-           <div style="height:6px;width:${score}%;background:var(--accent)"></div>
-        </div><span>${score}</span></div></td>`;
-    tr.querySelector("a").addEventListener("click",(e)=>{e.preventDefault(); openUniversityModal(u)});
-    tb.appendChild(tr);
-  });
-  // employer rating small
-  const et = $("#employerRatingSmall"); et.innerHTML = "<thead><tr><th>Компания</th><th>Рейтинг</th></tr></thead><tbody></tbody>";
-  const etb = et.querySelector("tbody");
-  COMPANIES.forEach(c=>{
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td><a href="#" data-company="${c.name}">${c.name}</a></td><td>⭐ ${c.rating.toFixed(1)}</td>`;
-    tr.querySelector("a").addEventListener("click",(e)=>{e.preventDefault(); openCompany(c.name)});
-    etb.appendChild(tr);
-  });
-  // charts
-  const kpiHours = [ {m:"Май",h:14},{m:"Июн",h:22},{m:"Июл",h:35},{m:"Авг",h:46} ];
-  const kpiTasks = [ {name:"В работе",v:28},{name:"На проверке",v:14},{name:"Готово",v:92} ];
-  drawBars($("#hoursChart"), kpiHours, "h", "m");
-  drawBars($("#statusChart"), kpiTasks, "v", "name");
-}
-
-// ---------- Seeker ----------
-function populateSeeker(){
-  createTabs("seeker", [
-    {id:"feed", label:"🔎 Лента задач"},
-    {id:"contracts", label:"📑 Контракты"},
-    {id:"portfolio", label:"⭐ Портфолио"},
-    {id:"universities", label:"🎓 Университеты"},
-    {id:"skills", label:"🏅 Навыки"},
-    {id:"articles", label:"📚 Статьи"},
-  ]);
-  // tasks
-  const grid = $("#tasksGrid"); grid.innerHTML="";
-  const allTasks = COMPANIES.flatMap(c => c.projects.map(p => ({...p, company:c.name, level:"Junior+"})));
-  allTasks.forEach(t=>{
-    const card=document.createElement("div"); card.className="card";
-    card.innerHTML = `<div class="title">${t.title}</div>
-      <div class="content">
-        <div class="chips">${t.skills.map(s=>`<span class="chip">${s}</span>`).join("")}</div>
-        <div class="muted" style="margin-top:8px">Компания: ${t.company} · Ставка: ${t.rate}₸/час · Оценка: ${t.hours} ч · Дедлайн: ${t.deadline}</div>
-        <div class="grid" style="grid-auto-flow:column; justify-content:space-between;margin-top:8px">
-          <button class="btn primary">Подробнее</button>
-          <button class="btn">Откликнуться</button>
-        </div>
-      </div>`;
-    card.querySelector(".btn.primary").addEventListener("click", ()=>openTaskModal(t));
-    grid.appendChild(card);
-  });
-  // portfolio
-  const pg = $("#portfolioGrid"); pg.innerHTML="";
-  ["Лендинг стартапа","Редизайн дашборда","QA‑чек‑листы","Аналитика A/B","Flutter MVP","SMM‑контент"].forEach((name,i)=>{
-    const c = document.createElement("div"); c.className="card";
-    c.innerHTML = `<div class="content">
-      <div style="font-weight:700">Кейс #${i+1}: ${name}</div>
-      <div class="muted">Роль: разная · Метрики: рост конверсии, скорость загрузки, качество</div>
-      <div class="hr"></div>
-      <button class="btn">Открыть кейс</button></div>`;
-    pg.appendChild(c);
-  });
-  // universities table (with "Войти как центр карьеры")
-  const ut = $("#uniTableFull"); ut.innerHTML="<thead><tr><th>#</th><th>Университет</th><th>Пул талантов</th><th>Скор</th><th>Действие</th></tr></thead><tbody></tbody>";
-  const utb = ut.querySelector("tbody");
-  UNIVERSITIES.forEach((u,i)=>{
-    const pool = SEEKERS.filter(s=>s.uni===u).length;
-    const score = 92 - i*2;
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${i+1}</td><td>${u}</td><td>${pool}</td><td>${score}</td><td>
-      <button class="btn" data-action="open">Открыть</button>
-      <button class="btn" data-action="login">Войти как центр карьеры</button></td>`;
-    tr.querySelector('[data-action="open"]').addEventListener("click", ()=>openUniversityModal(u));
-    tr.querySelector('[data-action="login"]').addEventListener("click", ()=>switchUniversity(u));
-    utb.appendChild(tr);
-  });
-  // skills map
-  const cm = $("#competencyMap"); cm.innerHTML="";
-  COMPETENCIES.forEach(c=>{
-    const box=document.createElement("div"); box.style.marginBottom="10px";
-    box.innerHTML = `<div style="font-weight:700">${c.cat}</div><div class="chips" style="margin-top:6px">${c.skills.map(s=>`<span class="chip">${s}</span>`).join("")}</div>`;
-    cm.appendChild(box);
-  });
-  // articles
-  const ag = $("#articlesGrid"); ag.innerHTML="";
-  ARTICLES.forEach(t=>{
-    const c = document.createElement("div"); c.className="card";
-    c.innerHTML = `<div class="content"><div style="font-weight:700">${t.title}</div><div class="muted" style="margin-top:6px">${t.tag}</div>
-                   <button class="btn" style="margin-top:8px">Читать</button></div>`;
-    ag.appendChild(c);
-  });
-}
-
-// ---------- Employer ----------
-function populateEmployer(){
-  createTabs("employer",[
-    {id:"pipeline",label:"📊 Вакансии/задачи"},
-    {id:"candidates",label:"👤 Кандидаты (10)"},
-    {id:"pools",label:"🎓 Пулы по вузам"},
-    {id:"employers",label:"🏢 Рейтинг работодателей"},
-    {id:"reports",label:"📈 Отчёты"},
-    {id:"articles",label:"📚 Статьи"},
-  ]);
-  // pipeline
-  const pt = $("#pipelineTable");
-  pt.innerHTML = "<thead><tr><th>Задача</th><th>Статус</th><th>Откликов</th><th>Этап</th><th>Компания</th></tr></thead><tbody></tbody>";
-  const ptb = pt.querySelector("tbody");
-  COMPANIES.forEach(c => {
-    c.projects.forEach((p,i)=>{
-      const tr=document.createElement("tr");
-      tr.innerHTML = `<td>${p.title}</td><td><span class="tag">${i%2? "На проверке":"В работе"}</span></td><td>${6+i*2}</td><td>${i%2? "UI 50%":"Аналитика"}</td><td><a href="#" data-company="${c.name}">${c.name}</a></td>`;
-      tr.querySelector("a").addEventListener("click",(e)=>{e.preventDefault(); openCompany(c.name)});
-      ptb.appendChild(tr);
-    });
-  });
-  // candidates (10)
-  const cg = $("#candidatesGrid"); cg.innerHTML="";
-  SEEKERS.forEach(s=>{
-    const card=document.createElement("div"); card.className="card";
-    card.innerHTML = `<div class="content">
-      <div class="grid" style="grid-template-columns:auto 1fr;gap:10px;align-items:center">
-        <div class="badge">🧑‍💻</div>
-        <div><div style="font-weight:700">${s.name}</div>
-             <div class="muted" style="font-size:12px">${s.role} · ${s.uni}</div></div>
-      </div>
-      <div class="chips" style="margin-top:8px">${s.skills.map(k=>`<span class="chip">${k}</span>`).join("")}</div>
-      <div class="grid" style="grid-auto-flow:column;justify-content:space-between;margin-top:10px">
-        <div>⭐ ${s.rating.toFixed(1)}</div>
-        <button class="btn" onclick="openCandidate('${s.id}')">Открыть профиль</button>
-      </div></div>`;
-    cg.appendChild(card);
-  });
-  // pools
-  const ptbl = $("#poolsTable"); ptbl.innerHTML = "<thead><tr><th>Университет</th><th>В пуле</th><th>Сред. рейтинг</th><th>Действие</th></tr></thead><tbody></tbody>";
-  const ptbody = ptbl.querySelector("tbody");
-  UNIVERSITIES.forEach(u=>{
-    const pool = SEEKERS.filter(s=>s.uni===u);
-    const avg = (pool.reduce((a,b)=>a+parseFloat(b.rating),0)/Math.max(pool.length,1) || 0).toFixed(1);
-    const tr=document.createElement("tr");
-    tr.innerHTML = `<td>${u}</td><td>${pool.length}</td><td>${avg}</td><td><button class="btn">Открыть пул</button></td>`;
-    tr.querySelector("button").addEventListener("click",()=>openUniversityModal(u));
-    ptbody.appendChild(tr);
-  });
-  // employer ratings
-  const ert = $("#employerRating"); ert.innerHTML = "<thead><tr><th>#</th><th>Работодатель</th><th>Рейтинг</th><th>Проектов</th><th>Детали</th></tr></thead><tbody></tbody>";
-  const ertb = ert.querySelector("tbody");
-  COMPANIES.slice().sort((a,b)=>b.rating-a.rating).forEach((c,i)=>{
-    const tr=document.createElement("tr");
-    tr.innerHTML = `<td>${i+1}</td><td>${c.name}</td><td>⭐ ${c.rating.toFixed(1)}</td><td>${c.projects.length}</td>
-                    <td><button class="btn">Открыть</button></td>`;
-    tr.querySelector("button").addEventListener("click",()=>openCompany(c.name));
-    ertb.appendChild(tr);
-  });
-  // articles
-  const ag = $("#articlesGrid2"); ag.innerHTML="";
-  ["Как писать краткое ТЗ","Частичная приёмка","Гайды по эскроу","Быстрый найм джуна"].forEach(t=>{
-    const c=document.createElement("div"); c.className="card";
-    c.innerHTML = `<div class="content"><div style="font-weight:700">${t}</div><div class="muted" style="margin-top:6px">Кейс‑ориентированные советы.</div>
-                   <button class="btn" style="margin-top:8px">Читать</button></div>`;
-    ag.appendChild(c);
-  });
-  // charts
-  const kpiHours = [ {m:"Май",h:14},{m:"Июн",h:22},{m:"Июл",h:35},{m:"Авг",h:46} ];
-  const kpiTasks = [ {name:"В работе",v:28},{name:"На проверке",v:14},{name:"Готово",v:92} ];
-  drawBars($("#hoursChart2"), kpiHours, "h", "m");
-  drawBars($("#statusChart3"), kpiTasks, "v", "name");
-}
-
-// ---------- University Dashboard ----------
-let currentUniversity = "KBTU";
-function populateUniversity(){
-  createTabs("university",[
-    {id:"overview",label:"📊 Обзор"},
-    {id:"pools",label:"🎓 Пулы талантов"},
-    {id:"analytics",label:"📈 Аналитика"},
-    {id:"articles",label:"📚 Статьи"},
-  ]);
-  $("#uniDashTitle").textContent = currentUniversity + " — Центр карьеры";
-  // overview cards
-  const pool = SEEKERS.filter(s=>s.uni===currentUniversity);
-  const avg = (pool.reduce((a,b)=>a+parseFloat(b.rating),0)/Math.max(pool.length,1)||0).toFixed(1);
-  $("#uniCount").textContent = pool.length;
-  $("#uniAvg").textContent = avg;
-  $("#uniHubs").textContent = "3";
-  drawBars($("#uniHoursChart"), [{m:"Май",h:12},{m:"Июн",h:18},{m:"Июл",h:26},{m:"Авг",h:31}], "h", "m");
-  // pools table
-  const ut = $("#uniPoolTable"); ut.innerHTML = "<thead><tr><th>Имя</th><th>Роль</th><th>Рейтинг</th><th>Действие</th></tr></thead><tbody></tbody>";
-  const utb = ut.querySelector("tbody");
-  pool.forEach(s=>{
-    const tr=document.createElement("tr");
-    tr.innerHTML = `<td>${s.name}</td><td>${s.role}</td><td>⭐ ${s.rating.toFixed(1)}</td><td><button class="btn" onclick="openCandidate('${s.id}')">Открыть</button></td>`;
-    utb.appendChild(tr);
-  });
-  // analytics
-  drawBars($("#uniSkillsChart"), [{k:"Web",v:18},{k:"Data",v:12},{k:"QA",v:8},{k:"SMM",v:10}], "v", "k");
-  drawBars($("#uniStatusChart"), [{k:"В работе",v:12},{k:"На проверке",v:6},{k:"Готово",v:22}], "v", "k");
-  // articles
-  const ag = $("#uniArticlesGrid"); ag.innerHTML="";
-  ["Как готовить пул выпускников","Шаблоны резюме","Соглашение об эскроу"].forEach(t=>{
-    const c=document.createElement("div"); c.className="card";
-    c.innerHTML = `<div class="content"><div style="font-weight:700">${t}</div><div class="muted" style="margin-top:6px">Материалы для центров карьеры</div></div>`;
-    ag.appendChild(c);
-  });
-}
-
-// ---------- Drill-down (modals) ----------
-function openTaskModal(t){
-  $("#taskTitle").textContent = t.title;
-  $("#taskSkills").innerHTML = t.skills.map(s=>`<span class="chip">${s}</span>`).join("");
-  $("#taskMeta").textContent = `Компания: ${t.company} · Ставка: ${t.rate}₸/час · Оценка: ${t.hours} ч · Дедлайн: ${t.deadline}`;
-  openModal("#taskModal");
-}
-function openCompany(name){
-  const c = COMPANIES.find(x=>x.name===name); if(!c) return;
-  $("#companyTitle").textContent = `${name} — ${c.tagline}`;
-  $("#companyRating").textContent = "⭐ " + c.rating.toFixed(1);
-  const list = document.createElement("div");
-  c.projects.forEach(p=>{
-    const row = document.createElement("div"); row.style.margin="8px 0"; row.className="card";
-    row.innerHTML = `<div class="content"><div style="font-weight:700">${p.title}</div>
-                     <div class="chips" style="margin-top:6px">${p.skills.map(s=>`<span class="chip">${s}</span>`).join("")}</div>
-                     <div class="muted" style="margin-top:4px">Ставка: ${p.rate}₸/час · Оценка: ${p.hours} ч · Дедлайн: ${p.deadline}</div>
-                     <button class="btn" style="margin-top:6px">Открыть проект</button></div>`;
-    list.appendChild(row);
-  });
-  const wrap = $("#companyProjects"); wrap.innerHTML=""; wrap.appendChild(list);
-  openModal("#companyModal");
-}
-function openUniversityModal(uni){
-  $("#uniTitle").textContent = uni;
-  const pool = SEEKERS.filter(s=>s.uni===uni);
-  const avg = (pool.reduce((a,b)=>a+parseFloat(b.rating),0)/Math.max(pool.length,1) || 0).toFixed(1);
-  $("#uniOverview").innerHTML = `<div><strong>Талантов в пуле:</strong> ${pool.length}</div>
-                                 <div><strong>Средний рейтинг:</strong> ${avg}</div>`;
-  const cc = $("#uniCompanies"); cc.innerHTML="";
-  COMPANIES.slice().sort((a,b)=>b.rating-a.rating).slice(0,3).forEach(c=>{
-    const row = document.createElement("div"); row.className="grid"; row.style.gridTemplateColumns="auto 1fr"; row.style.gap="8px";
-    row.style.margin="6px 0";
-    row.innerHTML = `<div class="badge">🏢</div><div>${c.name} — <span class="muted">${c.tagline}</span></div>`;
-    cc.appendChild(row);
-  });
-  const tl = $("#uniTalent"); tl.innerHTML="";
-  pool.forEach(s=>{
-    const row = document.createElement("div"); row.className="grid"; row.style.gridTemplateColumns="1fr auto"; row.style.gap="8px";
-    row.style.margin="4px 0";
-    row.innerHTML = `<div>${s.name} — <span class="muted">${s.role}</span></div><div>⭐ ${s.rating.toFixed(1)}</div>`;
-    tl.appendChild(row);
-  });
-  openModal("#uniModal");
-}
-
-// ---------- Branding / Theme ----------
-function initBranding(){
-  $("#brandingBtn").addEventListener("click", ()=>openModal("#brandingModal"));
-  $("#openBranding").addEventListener("click", ()=>openModal("#brandingModal"));
-  $("#closeBranding").addEventListener("click", closeModals);
-  $("#accentPicker").addEventListener("input", e=>applyAccent(e.target.value));
-  document.querySelectorAll("#brandingModal .chip").forEach(b=>{
-    b.addEventListener("click", ()=>{ setTheme(b.dataset.theme); closeModals(); });
-  });
-}
-
-// ---------- Presentation (Tour) ----------
-const TOUR_STEPS = [
-  {title:"Лэндинг", action:()=>{switchRole("guest");}},
-  {title:"Соискатель — Лента задач", action:()=>{switchRole("seeker"); setActiveTab("seeker","feed");}},
-  {title:"Карточка задачи", action:()=>{const t={...COMPANIES[0].projects[0], company:COMPANIES[0].name}; openTaskModal(t);}},
-  {title:"Соискатель — Университеты", action:()=>{closeModals(); setActiveTab("seeker","universities");}},
-  {title:"Работодатель — Пайплайн", action:()=>{switchRole("employer"); setActiveTab("employer","pipeline");}},
-  {title:"Работодатель — Кандидаты (10)", action:()=>{setActiveTab("employer","candidates");}},
-  {title:"Университет — Обзор", action:()=>{switchUniversity("KBTU");}},
-];
-let tourIndex = 0;
-function openTour(){
-  const slides = $("#slides"); const dots = $("#dots");
-  slides.innerHTML = ""; dots.innerHTML = "";
-  TOUR_STEPS.forEach((s,i)=>{
-    const sl = document.createElement("div"); sl.className="slide"; sl.innerHTML = `<div><strong>${i+1}. ${s.title}</strong><div class="muted">Нажмите «Далее», чтобы перейти к следующей сцене.</div></div>`;
-    slides.appendChild(sl);
-    const dot = document.createElement("div"); dot.className="dot"; dots.appendChild(dot);
-  });
-  tourIndex = 0; setSlide(0); openModal("#tourModal");
-  TOUR_STEPS[0].action();
-}
-function setSlide(i){
-  document.querySelectorAll("#slides .slide").forEach((el,idx)=>el.classList.toggle("active", idx===i));
-  document.querySelectorAll("#dots .dot").forEach((el,idx)=>el.classList.toggle("active", idx===i));
-}
-function nextSlide(){ tourIndex = Math.min(TOUR_STEPS.length-1, tourIndex+1); setSlide(tourIndex); TOUR_STEPS[tourIndex].action(); }
-function prevSlide(){ tourIndex = Math.max(0, tourIndex-1); setSlide(tourIndex); TOUR_STEPS[tourIndex].action(); }
-
-// ---------- Role switching ----------
-function switchRole(role){
-  ["landing","seeker","employer","university"].forEach(id=>hide(document.getElementById(id)));
-  if(role==="seeker"){ show($("#seeker")); }
-  else if(role==="employer"){ show($("#employer")); }
-  else if(role==="university"){ show($("#university")); }
-  else { show($("#landing")); }
-  window.scrollTo({top:0, behavior:"smooth"});
-}
-// helper to switch and set current university
-function switchUniversity(u){
-  currentUniversity = u;
-  switchRole("university");
-  populateUniversity();
-  toast("Режим: " + u + " — центр карьеры");
-}
-
-// ---------- Upload (demo) ----------
-function initUpload(){
-  $("#uploadPoolBtn").addEventListener("click", ()=>openModal("#uploadModal"));
-  $("#uploadConfirm").addEventListener("click", ()=>{
-    const t = $("#uploadText").value.trim();
-    if(!t){ toast("Пустой список"); return; }
-    const rows = t.split("\n").map(l=>l.split(";"));
-    rows.forEach(r=>{
-      if(r.length>=4){
-        SEEKERS.push({id:"N"+Math.random().toString(36).slice(2,7), name:r[0], role:r[1], uni:r[2], rating:parseFloat(r[3])||4.5, cases:1, skills:["Новичок","Готов к стаж."]});
-      }
-    });
-    closeModals();
-    populateUniversity();
-    toast("Пул обновлён (демо)");
-  });
-  $("#switchUniBtn").addEventListener("click", ()=>{
-    const next = prompt("Введите вуз (KBTU, AlmaU, Satbayev, ENU, KazGUU, SDU, KazNU, AITU):", currentUniversity) || currentUniversity;
-    switchUniversity(next);
-  });
-}
-
-// ---------- Init ----------
-function init(){
-  populateLanding();
-  populateSeeker();
-  populateEmployer();
-  initBranding();
-  initUpload();
-
-  document.querySelectorAll(".modal-backdrop").forEach(m=>m.addEventListener("click",e=>{ if(e.target===m) closeModals(); }));
-  $("#enterSeeker").addEventListener("click", ()=>switchRole("seeker"));
-  $("#enterEmployer").addEventListener("click", ()=>switchRole("employer"));
-  $("#enterUniversity").addEventListener("click", ()=>switchUniversity("KBTU"));
-  $("#logoutBtn").addEventListener("click", ()=>{switchRole("guest"); toast("Вы вышли из кабинета");});
-  $("#themeBtn").addEventListener("click", ()=>{
-    const isBW = document.body.classList.toggle("theme-bw");
-    applyAccent(isBW ? "#111111" : "#0a2b72");
-  });
-  $("#newTaskBtn").addEventListener("click", ()=>openModal("#wizardModal"));
-  $("#closeWizard").addEventListener("click", closeModals);
-  $("#publishWizard").addEventListener("click", ()=>{ closeModals(); toast("Задача опубликована (демо)"); });
-  $("#tourBtn").addEventListener("click", openTour);
-
-  // Start at landing
-  switchRole("guest");
-}
-window.addEventListener("DOMContentLoaded", init);
-</script>
+  <!-- Содержимое страницы -->
 </body>
 </html>
